@@ -3293,6 +3293,9 @@ def setup_chat_routes(
             active_document=bool(active_doc), workspace=bool(workspace),
             image_attachment=any(str(a.get('mime') or '').startswith('image/') for a in (ctx.preprocessed.attachment_meta or [])),
         ) if _use_turn_contract else frozenset()
+        if getattr(request, "headers", {}).get("x-permissive-workspace") == "1" or os.getenv("ODYSSEUS_PERMISSIVE_WORKSPACE", "0").lower() in ("1", "true", "yes", "on"):
+            _turn_capabilities = frozenset(set(_turn_capabilities) | {"shell_files"})
+            _active_turn_capabilities = _turn_capabilities
         # Scoped photo_editor family: offered ONLY for an explicit editor
         # request (Quick Edit popup / editor session) or an image-edit chat
         # turn carrying an image. When active the turn offers just the editor
@@ -3636,7 +3639,7 @@ def setup_chat_routes(
                                  for a in (ctx.preprocessed.attachment_meta or [])),
             capabilities=(({"photo_editor"} if _photo_editor_active else set()) | ({'search_browser'} if (
                 _explicit_browser_intent or _external_discovery_intent
-            ) else set())),
+            ) else set()) | ({"shell_files"} if getattr(request, "headers", {}).get("x-permissive-workspace") == "1" or os.getenv("ODYSSEUS_PERMISSIVE_WORKSPACE", "0").lower() in ("1", "true", "yes", "on") else set())),
         )
         if exact_tool_approval is not None:
             from src.agent_runtime.authority import RequestAuthority

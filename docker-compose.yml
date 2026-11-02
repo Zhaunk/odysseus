@@ -27,6 +27,7 @@ services:
       - ${APP_DATA_DIR:-./data}/local:/app/.local:z
       - ./static:/app/static:ro,z
       - ./src:/app/src:ro,z
+      - ./routes:/app/routes:ro,z
       - ${APP_DATA_DIR:-./data}/agent_workspace:/home/coder/workspace:z
     extra_hosts:
       # Lets the container reach local services on the Docker host, including

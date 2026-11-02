@@ -975,7 +975,58 @@ import { invalidateSettings } from './appConfig.js';
     }, 0);
   }
 
+	  function _isSessionPermissive(sid) {
+	    if (!sid) return false;
+	    return localStorage.getItem('odysseus_permissive_' + sid) === '1';
+	  }
+
+	  function _updateWorkspaceModePill(sid) {
+	    const pill = document.getElementById('workspace-mode-pill');
+	    const dot = document.getElementById('workspace-mode-dot');
+	    const label = document.getElementById('workspace-mode-label');
+	    if (!pill) return;
+	    if (!sid) {
+	      pill.style.display = 'none';
+	      return;
+	    }
+	    pill.style.display = 'inline-flex';
+	    const isPerm = _isSessionPermissive(sid);
+	    if (isPerm) {
+	      pill.title = 'Developer Mode: ON (full terminal & workspace tools granted on every turn). Click to switch to Strict.';
+	      if (dot) dot.style.background = '#4caf50';
+	      if (label) label.textContent = 'Dev Mode';
+	      pill.style.borderColor = 'rgba(76, 175, 80, 0.4)';
+	    } else {
+	      pill.title = 'Strict Mode: ON (zero-trust keyword verification). Click to switch to Developer Mode.';
+	      if (dot) dot.style.background = '#757575';
+	      if (label) label.textContent = 'Strict';
+	      pill.style.borderColor = '';
+	    }
+	  }
+
+	  let _workspacePillBound = false;
+	  function _bindWorkspaceModePill() {
+	    if (_workspacePillBound) return;
+	    _workspacePillBound = true;
+	    const pill = document.getElementById('workspace-mode-pill');
+	    if (!pill) return;
+	    pill.addEventListener('click', async (e) => {
+	      e.preventDefault();
+	      e.stopPropagation();
+	      const sid = await _resolveCurrentSessionId({ adopt: false });
+	      if (!sid) {
+	        uiModule.showToast('Open a chat first');
+	        return;
+	      }
+	      const next = !_isSessionPermissive(sid);
+	      localStorage.setItem('odysseus_permissive_' + sid, next ? '1' : '0');
+	      _updateWorkspaceModePill(sid);
+	      uiModule.showToast(next ? '🔓 Developer Mode ON for this chat' : '🛡️ Strict Mode ON for this chat');
+	    });
+	  }
+
 	  function _bindContextHeaderPill() {
+	    _bindWorkspaceModePill();
 	    if (_contextHeaderBound) return;
 	    _contextHeaderBound = true;
     const pill = document.getElementById('chat-context-pill');
@@ -1151,6 +1202,7 @@ import { invalidateSettings } from './appConfig.js';
     }
     pill.hidden = false;
     pill.classList.add('loading');
+    _updateWorkspaceModePill(sid);
     try {
       const res = await fetch(`/api/session/${encodeURIComponent(sid)}/context`, { credentials: 'same-origin' });
       if (!res.ok) throw new Error(await res.text());
@@ -3125,10 +3177,15 @@ import { invalidateSettings } from './appConfig.js';
         catch { return ''; }
       })();
       _sendPerf.mark('chat_stream_post_begin');
+      const _isPermissive = _isSessionPermissive(streamSessionId);
       const res = await fetch(`${API_BASE}/api/chat_stream`, {
         method: 'POST',
         body: fd,
-        headers: { 'X-Tz-Offset': String(_tzOffsetMin), 'X-Tz-Name': _tzName },
+        headers: {
+          'X-Tz-Offset': String(_tzOffsetMin),
+          'X-Tz-Name': _tzName,
+          'X-Permissive-Workspace': _isPermissive ? '1' : '0'
+        },
         signal: abortCtrl.signal
       });
       _sendPerf.mark('chat_stream_headers');
