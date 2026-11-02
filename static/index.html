@@ -1245,6 +1245,11 @@
           </button>
         </div>
         <div class="chat-input-right">
+          <!-- Workspace Authority Mode Toggle (Strict vs Dev Mode) -->
+          <button type="button" class="mode-toggle-btn" id="workspace-mode-btn" title="Toggle Developer Mode (Permissive Workspace)" style="display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:600; cursor:pointer; padding:2px 8px; border-radius:12px; border:1px solid var(--border); background:color-mix(in srgb, var(--panel) 85%, transparent); margin-right:4px;">
+            <span id="workspace-mode-dot" style="display:inline-block; width:7px; height:7px; border-radius:50%; background:#757575;"></span>
+            <span id="workspace-mode-label">Strict</span>
+          </button>
           <!-- Agent / Chat mode toggle -->
           <div class="mode-toggle">
             <button type="button" class="mode-toggle-btn active" id="mode-agent-btn" aria-pressed="true">Agent</button>

@@ -981,36 +981,34 @@ import { invalidateSettings } from './appConfig.js';
 	  }
 
 	  function _updateWorkspaceModePill(sid) {
-	    const pill = document.getElementById('workspace-mode-pill');
-	    const dot = document.getElementById('workspace-mode-dot');
-	    const label = document.getElementById('workspace-mode-label');
-	    if (!pill) return;
-	    if (!sid) {
-	      pill.style.display = 'none';
-	      return;
-	    }
-	    pill.style.display = 'inline-flex';
+	    const els = [
+	      { pill: document.getElementById('workspace-mode-pill'), dot: document.getElementById('workspace-mode-dot'), label: document.getElementById('workspace-mode-label') },
+	      { pill: document.getElementById('workspace-mode-btn'), dot: document.querySelector('#workspace-mode-btn #workspace-mode-dot'), label: document.querySelector('#workspace-mode-btn #workspace-mode-label') }
+	    ];
 	    const isPerm = _isSessionPermissive(sid);
-	    if (isPerm) {
-	      pill.title = 'Developer Mode: ON (full terminal & workspace tools granted on every turn). Click to switch to Strict.';
-	      if (dot) dot.style.background = '#4caf50';
-	      if (label) label.textContent = 'Dev Mode';
-	      pill.style.borderColor = 'rgba(76, 175, 80, 0.4)';
-	    } else {
-	      pill.title = 'Strict Mode: ON (zero-trust keyword verification). Click to switch to Developer Mode.';
-	      if (dot) dot.style.background = '#757575';
-	      if (label) label.textContent = 'Strict';
-	      pill.style.borderColor = '';
-	    }
+	    els.forEach(({ pill, dot, label }) => {
+	      if (!pill) return;
+	      if (isPerm) {
+	        pill.title = 'Developer Mode: ON (full terminal & workspace tools granted on every turn). Click to switch to Strict.';
+	        if (dot) dot.style.background = '#4caf50';
+	        if (label) label.textContent = 'Dev Mode';
+	        pill.style.borderColor = 'rgba(76, 175, 80, 0.6)';
+	        pill.style.color = '#4caf50';
+	      } else {
+	        pill.title = 'Strict Mode: ON (zero-trust keyword verification). Click to switch to Developer Mode.';
+	        if (dot) dot.style.background = '#757575';
+	        if (label) label.textContent = 'Strict';
+	        pill.style.borderColor = '';
+	        pill.style.color = '';
+	      }
+	    });
 	  }
 
 	  let _workspacePillBound = false;
 	  function _bindWorkspaceModePill() {
 	    if (_workspacePillBound) return;
 	    _workspacePillBound = true;
-	    const pill = document.getElementById('workspace-mode-pill');
-	    if (!pill) return;
-	    pill.addEventListener('click', async (e) => {
+	    const toggleHandler = async (e) => {
 	      e.preventDefault();
 	      e.stopPropagation();
 	      const sid = await _resolveCurrentSessionId({ adopt: false });
@@ -1022,7 +1020,9 @@ import { invalidateSettings } from './appConfig.js';
 	      localStorage.setItem('odysseus_permissive_' + sid, next ? '1' : '0');
 	      _updateWorkspaceModePill(sid);
 	      uiModule.showToast(next ? '🔓 Developer Mode ON for this chat' : '🛡️ Strict Mode ON for this chat');
-	    });
+	    };
+	    document.getElementById('workspace-mode-pill')?.addEventListener('click', toggleHandler);
+	    document.getElementById('workspace-mode-btn')?.addEventListener('click', toggleHandler);
 	  }
 
 	  function _bindContextHeaderPill() {
