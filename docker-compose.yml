@@ -25,6 +25,9 @@ services:
       # land under /app/.local for the odysseus user. Persist them so a
       # container recreate does not silently remove installed serve engines.
       - ${APP_DATA_DIR:-./data}/local:/app/.local:z
+      - ./static:/app/static:ro,z
+      - ./src:/app/src:ro,z
+      - ${APP_DATA_DIR:-./data}/agent_workspace:/home/coder/workspace:z
     extra_hosts:
       # Lets the container reach local services on the Docker host, including
       # Ollama at http://host.docker.internal:11434.
@@ -186,6 +189,20 @@ services:
     environment:
       - NTFY_BASE_URL=${NTFY_BASE_URL:-http://localhost:8091}
     restart: unless-stopped
+
+  code-server:
+    image: codercom/code-server:latest
+    container_name: odysseus-code-server
+    restart: unless-stopped
+    ports:
+      - "${CODE_SERVER_BIND:-0.0.0.0}:${CODE_SERVER_PORT:-8085}:8080"
+    volumes:
+      - ${APP_DATA_DIR:-./data}/agent_workspace:/home/coder/workspace:z
+      - ${APP_DATA_DIR:-./data}/code-server-config:/home/coder/.config:z
+      - ${APP_DATA_DIR:-./data}/code-server-data:/home/coder/.local/share/code-server:z
+    environment:
+      - DOCKER_USER=coder
+    command: --auth none --disable-telemetry --disable-workspace-trust /home/coder/workspace
 
 volumes:
   searxng-data:

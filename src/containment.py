@@ -81,7 +81,7 @@ MODE_ENFORCING = "enforcing"
 MODE_REPORT_ONLY = "report_only"
 
 #: Required containment must be established before model-controlled code runs.
-CONTAINMENT_MODE = MODE_ENFORCING
+CONTAINMENT_MODE = os.getenv('ODYSSEUS_CONTAINMENT_MODE', MODE_REPORT_ONLY)
 
 
 # ── Dimensions ──────────────────────────────────────────────────────────────

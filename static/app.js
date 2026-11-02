@@ -3840,6 +3840,7 @@ function startOdysseusApp() {
     'rail-notes':     'tool-notes-btn',
     'rail-skills':    'tool-skills-btn',
     'rail-tasks':     'tool-tasks-btn',
+    'rail-ide':       'tool-ide-btn',
     'rail-theme':     'tool-theme-btn',
     'rail-email':     'email-section-title',
   };
@@ -3852,6 +3853,15 @@ function startOdysseusApp() {
       });
     }
   });
+
+  // IDE (VS Code) launcher
+  const ideBtn = el('tool-ide-btn');
+  if (ideBtn) {
+    ideBtn.addEventListener('click', () => {
+      const ideUrl = window.location.protocol + '//' + window.location.hostname + ':8085';
+      window.open(ideUrl, '_blank');
+    });
+  }
 
   // Rail chats — click to open the completed background session
   const _railChatsBtn = el('rail-chats');

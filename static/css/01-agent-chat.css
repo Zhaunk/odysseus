@@ -2621,8 +2621,7 @@ body.bg-pattern-ascii-fireflies {
        queries so it responds to *bar width*, not viewport width (the bar
        can be in a split pane). */
     .chat-input-bar { container-type: inline-size; container-name: chatbar; }
-    @container chatbar (max-width: 340px) {
-      .chat-input-right .mode-toggle { display: none !important; }
+    @container chatbar (max-width: 240px) { .chat-input-right .mode-toggle { display: none !important; }
     }
     .chat-input-left {
       display: flex;
