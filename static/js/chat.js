@@ -975,33 +975,46 @@ import { invalidateSettings } from './appConfig.js';
     }, 0);
   }
 
+	  let _pendingPermissiveMode = false;
+
 	  function _isSessionPermissive(sid) {
-	    if (!sid) return false;
-	    return localStorage.getItem('odysseus_permissive_' + sid) === '1';
+	    if (!sid) return !!_pendingPermissiveMode;
+	    const val = localStorage.getItem('odysseus_permissive_' + sid);
+	    if (val !== null) return val === '1';
+	    return !!_pendingPermissiveMode;
 	  }
 
 	  function _updateWorkspaceModePill(sid) {
-	    const els = [
-	      { pill: document.getElementById('workspace-mode-pill'), dot: document.getElementById('workspace-mode-dot'), label: document.getElementById('workspace-mode-label') },
-	      { pill: document.getElementById('workspace-mode-btn'), dot: document.querySelector('#workspace-mode-btn #workspace-mode-dot'), label: document.querySelector('#workspace-mode-btn #workspace-mode-label') }
-	    ];
 	    const isPerm = _isSessionPermissive(sid);
-	    els.forEach(({ pill, dot, label }) => {
-	      if (!pill) return;
-	      if (isPerm) {
-	        pill.title = 'Developer Mode: ON (full terminal & workspace tools granted on every turn). Click to switch to Strict.';
-	        if (dot) dot.style.background = '#4caf50';
-	        if (label) label.textContent = 'Dev Mode';
-	        pill.style.borderColor = 'rgba(76, 175, 80, 0.6)';
-	        pill.style.color = '#4caf50';
-	      } else {
-	        pill.title = 'Strict Mode: ON (zero-trust keyword verification). Click to switch to Developer Mode.';
-	        if (dot) dot.style.background = '#757575';
-	        if (label) label.textContent = 'Strict';
-	        pill.style.borderColor = '';
-	        pill.style.color = '';
-	      }
-	    });
+	    const dotColors = isPerm ? '#4caf50' : '#757575';
+	    const text = isPerm ? 'Dev Mode' : 'Strict';
+	    const border = isPerm ? 'rgba(76, 175, 80, 0.6)' : '';
+	    const color = isPerm ? '#4caf50' : '';
+	    const title = isPerm
+	      ? 'Developer Mode: ON (full terminal & workspace tools granted on every turn). Click to switch to Strict.'
+	      : 'Strict Mode: ON (zero-trust keyword verification). Click to switch to Developer Mode.';
+
+	    const pill = document.getElementById('workspace-mode-pill');
+	    if (pill) {
+	      pill.title = title;
+	      pill.style.borderColor = border;
+	      pill.style.color = color;
+	      const dot = pill.querySelector('#workspace-mode-dot') || pill.querySelector('.chat-context-dot');
+	      if (dot) dot.style.background = dotColors;
+	      const label = pill.querySelector('#workspace-mode-label') || pill.querySelector('span:last-child');
+	      if (label) label.textContent = text;
+	    }
+
+	    const btn = document.getElementById('workspace-mode-btn');
+	    if (btn) {
+	      btn.title = title;
+	      btn.style.borderColor = border;
+	      btn.style.color = color;
+	      const dot = btn.querySelector('#workspace-mode-dot') || btn.querySelector('span:first-child');
+	      if (dot) dot.style.background = dotColors;
+	      const label = btn.querySelector('#workspace-mode-label') || btn.querySelector('span:last-child');
+	      if (label) label.textContent = text;
+	    }
 	  }
 
 	  let _workspacePillBound = false;
@@ -1013,7 +1026,9 @@ import { invalidateSettings } from './appConfig.js';
 	      e.stopPropagation();
 	      const sid = await _resolveCurrentSessionId({ adopt: false });
 	      if (!sid) {
-	        uiModule.showToast('Open a chat first');
+	        _pendingPermissiveMode = !_pendingPermissiveMode;
+	        _updateWorkspaceModePill(null);
+	        uiModule.showToast(_pendingPermissiveMode ? '🔓 Developer Mode ON for this chat' : '🛡️ Strict Mode ON for this chat');
 	        return;
 	      }
 	      const next = !_isSessionPermissive(sid);
@@ -1023,6 +1038,7 @@ import { invalidateSettings } from './appConfig.js';
 	    };
 	    document.getElementById('workspace-mode-pill')?.addEventListener('click', toggleHandler);
 	    document.getElementById('workspace-mode-btn')?.addEventListener('click', toggleHandler);
+	    _updateWorkspaceModePill(null);
 	  }
 
 	  function _bindContextHeaderPill() {
@@ -1198,6 +1214,10 @@ import { invalidateSettings } from './appConfig.js';
       _contextHeaderData = null;
       pill.hidden = true;
       _closeContextHeaderPopup();
+      if (reason === 'new-chat') {
+        _pendingPermissiveMode = false;
+      }
+      _updateWorkspaceModePill(null);
       return;
     }
     pill.hidden = false;
@@ -2513,6 +2533,11 @@ import { invalidateSettings } from './appConfig.js';
     // able to name its run, so the Stop fires from its own header arrival
     // (see _rememberStreamRunId) even if this replacement dies before fetch.
     const streamSessionId = sessionModule.getCurrentSessionId();
+    if (streamSessionId && localStorage.getItem('odysseus_permissive_' + streamSessionId) === null) {
+      if (_pendingPermissiveMode) {
+        localStorage.setItem('odysseus_permissive_' + streamSessionId, '1');
+      }
+    }
     const streamGeneration = (_streamGenerations.get(streamSessionId) || 0) + 1;
     _streamGenerations.set(streamSessionId, streamGeneration);
     const _sendState = { generation: streamGeneration, abortCtrl: null };
